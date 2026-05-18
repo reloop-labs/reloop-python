@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "reloop"
+version = "0.1.0"
+description = "Reloop Python SDK"
+authors = [{ name = "Reloop Labs" }]
+dependencies = [
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0"
+]
