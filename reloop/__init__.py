@@ -1,3 +1,12 @@
-from .client import ReloopClient
+from .errors import ReloopApiError, ReloopError, ReloopNetworkError
+from .reloop import Reloop
 
-__all__ = ["ReloopClient"]
+ReloopClient = Reloop
+
+__all__ = [
+    "Reloop",
+    "ReloopClient",
+    "ReloopError",
+    "ReloopApiError",
+    "ReloopNetworkError",
+]

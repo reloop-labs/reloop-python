@@ -1,0 +1,21 @@
+# Python bytecode and envs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+__pycache__
+*.log

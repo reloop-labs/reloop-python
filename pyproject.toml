@@ -4,10 +4,18 @@ build-backend = "hatchling.build"
 
 [project]
 name = "reloop"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reloop Python SDK"
+readme = "README.md"
+requires-python = ">=3.9"
 authors = [{ name = "Reloop Labs" }]
 dependencies = [
     "httpx>=0.24.0",
-    "pydantic>=2.0.0"
 ]
+
+[project.urls]
+Homepage = "https://reloop.sh"
+Repository = "https://github.com/reloop-labs/reloop-python"
+
+[tool.hatch.build.targets.wheel]
+packages = ["reloop"]
