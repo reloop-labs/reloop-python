@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'reloop/**'
+      - 'reloop_email/**'
       - 'pyproject.toml'
       - '.github/workflows/publish.yml'
   workflow_dispatch:

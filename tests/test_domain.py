@@ -3,9 +3,9 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, patch
 
-from reloop import Reloop
-from reloop._parameters import for_snake_request
-from reloop.services.domain import DomainService
+from reloop_email import Reloop
+from reloop_email._parameters import for_snake_request
+from reloop_email.services.domain import DomainService
 
 
 class DomainParametersTest(unittest.TestCase):
@@ -127,7 +127,7 @@ class DomainServiceTest(unittest.TestCase):
 
 
 class ReloopDomainIntegrationTest(unittest.TestCase):
-    @patch("reloop._http_client.httpx.Client")
+    @patch("reloop_email._http_client.httpx.Client")
     def test_reloop_exposes_domain_service(self, client_cls: MagicMock) -> None:
         client = client_cls.return_value
         client.request.return_value = MagicMock(

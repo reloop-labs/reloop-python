@@ -9,13 +9,13 @@ The official Python SDK for [Reloop](https://reloop.sh), modeled after the Strip
 ## Installation
 
 ```bash
-pip install reloop
+pip install reloop-email
 ```
 
 ## Getting Started
 
 ```python
-from reloop import Reloop
+from reloop_email import Reloop
 
 reloop = Reloop(api_key="re_123456789")
 # or
@@ -130,7 +130,7 @@ reloop.contacts.channels.create(
 ## Error Handling
 
 ```python
-from reloop import Reloop, ReloopApiError
+from reloop_email import Reloop, ReloopApiError
 
 reloop = Reloop(api_key="re_123456789")
 

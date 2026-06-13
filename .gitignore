@@ -1,7 +1,7 @@
 # Python bytecode and envs
 __pycache__/
 tests/__pycache__/
-reloop/__pycache__/
+reloop_email/__pycache__/
 *.pyc
 *.pyo
 *.pyd

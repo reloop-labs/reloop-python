@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 if "httpx" not in sys.modules:
     sys.modules["httpx"] = MagicMock()
 
-from reloop.services.api_keys import ApiKeysService
+from reloop_email.services.api_keys import ApiKeysService
 
 
 class ApiKeysServiceTest(unittest.TestCase):

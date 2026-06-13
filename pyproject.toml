@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "reloop"
+name = "reloop-email"
 version = "0.2.0"
 description = "Reloop Python SDK"
 readme = "README.md"
@@ -18,4 +18,4 @@ Homepage = "https://reloop.sh"
 Repository = "https://github.com/reloop-labs/reloop-python"
 
 [tool.hatch.build.targets.wheel]
-packages = ["reloop"]
+packages = ["reloop_email"]
