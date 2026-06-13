@@ -38,6 +38,11 @@ def for_query(options: dict[str, Any]) -> dict[str, Any]:
     return for_request(options)
 
 
+def for_snake_request(parameters: dict[str, Any]) -> dict[str, Any]:
+    """Pass parameters through without camelCase conversion (domain API)."""
+    return {key: value for key, value in parameters.items() if value is not None}
+
+
 def for_response(data: dict[str, Any]) -> dict[str, Any]:
     normalized: dict[str, Any] = {}
 

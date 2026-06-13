@@ -5,6 +5,7 @@ from typing import Optional
 from ._http_client import HTTPClient
 from .services.api_keys import ApiKeysService
 from .services.contacts import ContactsService
+from .services.domain import DomainService
 
 
 class Reloop:
@@ -19,6 +20,7 @@ class Reloop:
         self._http = HTTPClient(api_key, base_url)
         self.api_keys = ApiKeysService(self._http)
         self.contacts = ContactsService(self._http)
+        self.domain = DomainService(self._http)
 
     @classmethod
     def client(

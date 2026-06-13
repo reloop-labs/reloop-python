@@ -39,8 +39,45 @@ reloop.api_keys.get("key_123456789")
 reloop.api_keys.update("key_123456789", name="Renamed key")
 reloop.api_keys.rotate("key_123456789")
 reloop.api_keys.disable("key_123456789")
+reloop.api_keys.pause("key_123456789")
 reloop.api_keys.enable("key_123456789")
 reloop.api_keys.delete("key_123456789")
+```
+
+## Domains
+
+Add, verify, and manage sending domains. Request parameters use snake_case; responses expose snake_case attributes.
+
+```python
+reloop = Reloop(api_key="rl_123456789")
+
+created = reloop.domain.create(
+    domain="send.example.com",
+    custom_return_path="inbound",
+    click_tracking=True,
+    open_tracking=True,
+    tls="opportunistic",
+    sending_email=True,
+    receiving_email=True,
+)
+
+domains = reloop.domain.list(page=1, limit=10, status="active")
+one = reloop.domain.get("domain_123456789")
+
+reloop.domain.update(
+    "domain_123456789",
+    click_tracking=False,
+    sending_email=True,
+)
+
+reloop.domain.verify("domain_123456789")
+
+reloop.domain.forward_dns("domain_123456789", email="admin@example.com")
+
+nameservers = reloop.domain.get_nameservers("domain_123456789")
+print(nameservers.dns_provider, nameservers.nameservers)
+
+reloop.domain.delete("domain_123456789")
 ```
 
 ## Contacts

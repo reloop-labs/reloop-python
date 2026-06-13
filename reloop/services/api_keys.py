@@ -56,3 +56,7 @@ class ApiKeysService:
     def disable(self, api_key_id: str) -> Any:
         data = self._client.request("POST", f"/api/api-key/v1/disable/{api_key_id}")
         return api_key(data)
+
+    def pause(self, api_key_id: str) -> Any:
+        """Pause an API key (alias for :meth:`disable`)."""
+        return self.disable(api_key_id)

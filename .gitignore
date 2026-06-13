@@ -1,5 +1,7 @@
 # Python bytecode and envs
 __pycache__/
+tests/__pycache__/
+reloop/__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -12,6 +14,7 @@ pip-log.txt
 .eggs/
 build/
 dist/
+__pycache__
 
 # IDE and OS
 .DS_Store

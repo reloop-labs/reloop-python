@@ -12,6 +12,12 @@ from ._resource import (
     ContactGroup,
     ContactList,
     ContactProperty,
+    DnsRecord,
+    Domain,
+    DomainList,
+    DomainNameservers,
+    DomainStatus,
+    ForwardDnsResponse,
     GroupList,
     PropertyList,
     Resource,
@@ -87,3 +93,35 @@ def channel_list(data: dict[str, Any]) -> ChannelList:
             contact_channel(item) for item in normalized["channels"]
         ]
     return ChannelList.from_dict(normalized)
+
+
+def dns_record(data: dict[str, Any]) -> DnsRecord:
+    return _build(DnsRecord, data)
+
+
+def domain(data: dict[str, Any]) -> Domain:
+    normalized = for_response(data)
+    if isinstance(normalized.get("dns_records"), list):
+        normalized["dns_records"] = [
+            dns_record(item) for item in normalized["dns_records"]
+        ]
+    return Domain.from_dict(normalized)
+
+
+def domain_list(data: dict[str, Any]) -> DomainList:
+    normalized = for_response(data)
+    if isinstance(normalized.get("domains"), list):
+        normalized["domains"] = [domain(item) for item in normalized["domains"]]
+    return DomainList.from_dict(normalized)
+
+
+def domain_status(data: dict[str, Any]) -> DomainStatus:
+    return _build(DomainStatus, data)
+
+
+def domain_nameservers(data: dict[str, Any]) -> DomainNameservers:
+    return _build(DomainNameservers, data)
+
+
+def forward_dns_response(data: dict[str, Any]) -> ForwardDnsResponse:
+    return _build(ForwardDnsResponse, data)

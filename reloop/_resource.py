@@ -72,3 +72,27 @@ class ContactChannel(Resource):
 
 class ChannelList(Resource):
     pass
+
+
+class DnsRecord(Resource):
+    pass
+
+
+class Domain(Resource):
+    pass
+
+
+class DomainList(Resource):
+    pass
+
+
+class DomainStatus(Resource):
+    pass
+
+
+class DomainNameservers(Resource):
+    pass
+
+
+class ForwardDnsResponse(Resource):
+    pass
