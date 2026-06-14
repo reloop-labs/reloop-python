@@ -21,6 +21,7 @@ from ._resource import (
     GroupList,
     PropertyList,
     Resource,
+    SendMailResponse,
 )
 
 T = TypeVar("T", bound=Resource)
@@ -125,3 +126,7 @@ def domain_nameservers(data: dict[str, Any]) -> DomainNameservers:
 
 def forward_dns_response(data: dict[str, Any]) -> ForwardDnsResponse:
     return _build(ForwardDnsResponse, data)
+
+
+def send_mail(data: dict[str, Any]) -> SendMailResponse:
+    return _build(SendMailResponse, data)

@@ -96,3 +96,7 @@ class DomainNameservers(Resource):
 
 class ForwardDnsResponse(Resource):
     pass
+
+
+class SendMailResponse(Resource):
+    _repr_attr = "message_id"
