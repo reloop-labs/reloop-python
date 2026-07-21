@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "reloop-email"
-version = "1.8.0"
+version = "2.0.0"
 description = "Reloop Python SDK"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -12,6 +12,16 @@ authors = [{ name = "Reloop Labs" }]
 license = "Apache-2.0"
 dependencies = [
     "httpx>=0.24.0",
+    "typing_extensions>=4.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "respx>=0.21",
+    "mypy>=1.8",
+    "ruff>=0.4",
+    "types-requests",
 ]
 
 [project.urls]
@@ -20,3 +30,32 @@ Repository = "https://github.com/reloop-labs/reloop-python"
 
 [tool.hatch.build.targets.wheel]
 packages = ["reloop_email"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+packages = ["reloop_email"]
+
+[[tool.mypy.overrides]]
+module = [
+    "reloop_email.services.webhook.*",
+    "reloop_email.services.inbox.*",
+    "reloop_email.services.contacts.*",
+    "reloop_email.services.domain.*",
+]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
+warn_return_any = false
+allow_any_generics = true
+disable_error_code = ["type-arg", "assignment", "arg-type", "index", "name-defined"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"

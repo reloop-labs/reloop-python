@@ -17,11 +17,12 @@ git clone git@github.com:reloop-labs/reloop-python.git
 cd reloop-python
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e .
-python -m unittest discover -s tests -v
+pip install -e ".[dev]"
+pytest -q
+mypy reloop_email
 ```
 
-Requires **Python 3.9+**.
+Requires **Python 3.9+** (mypy checks as 3.10).
 
 ---
 
@@ -29,17 +30,25 @@ Requires **Python 3.9+**.
 
 ```
 reloop_email/
-  reloop.py              # Reloop client
-  client.py              # HTTP layer
-  _parameters.py         # for_request / for_snake_request
-  _resource.py           # Resource objects (snake_case attrs)
+  py.typed
+  __init__.py            # public exports
+  reloop.py              # Reloop facade
+  client.py              # ReloopClient → ReloopResult
+  core/
+    result.py            # ReloopResult, ReloopApiError, ok/err
+    types.py
   services/
-    mail.py
-    domain.py
-    api_keys.py
-    contacts/
+    mail/
+    api_key/
+    domain/
+    contacts/            # + property, group, channel
+    webhook/             # + verify
+    inbox/               # + mailbox, message, thread
 tests/
-pyproject.toml           # version + hatch build
+  test_init.py
+  test_exports.py
+  services/...
+pyproject.toml
 ```
 
 ---
@@ -48,19 +57,21 @@ pyproject.toml           # version + hatch build
 
 | Topic | Rule |
 |-------|------|
-| Mail & domain | `for_snake_request()` — snake_case JSON |
-| Contacts & API keys | `for_request()` — camelCase JSON |
-| Mail sender | Use `from_=` (Python reserves `from`) |
-| Responses | `for_response()` → snake_case attributes (`message_id`) |
-| Tests | `unittest` + `MagicMock` on `HTTPClient.request` |
-| README | Minimal send example + link to docs |
+| Wire bodies (mail, domain) | snake_case JSON |
+| Wire bodies (contacts, api_key, inbox, webhook) | camelCase as Node/API expect |
+| Bad args | raise `ReloopValidationError` before HTTP |
+| HTTP / network | named Result (`email_error`, `api_key_error`, …) — no raise |
+| Types | TypedDict params/responses; frozen dataclass Results |
+| Tests | pytest + respx; assert path/method/headers/body; assert no HTTP on validation |
+| Typecheck | `mypy reloop_email` (strict; service overrides for compressed modules) |
 
 ---
 
 ## Pull request checklist
 
-- [ ] `python -m unittest discover -s tests -v` passes
-- [ ] Route tests assert path, method, and JSON body
+- [ ] `pytest -q` passes
+- [ ] `mypy reloop_email` passes
+- [ ] Route tests assert path, method, and JSON body where relevant
 - [ ] Version in `pyproject.toml` bumped only for releases
 - [ ] No secrets committed
 
@@ -72,14 +83,12 @@ Version: **`pyproject.toml`** → `[project] version`.
 
 ```bash
 # 1. Bump version in pyproject.toml
-git commit -am "chore: release v1.9.0"
+git commit -am "chore: release v2.0.1"
 git push origin main
 
 # 2. Tag (must match pyproject.toml)
-git tag v1.9.0
-git push origin v1.9.0
+git tag v2.0.1
+git push origin v2.0.1
 ```
 
-[`.github/workflows/release.yml`](./.github/workflows/release.yml) creates a GitHub Release with source zip + `dist/*` wheels.
-
-Publish to PyPI: [`.github/workflows/publish.yml`](./.github/workflows/publish.yml) or `hatch publish`.
+GitHub Actions publish on tag push.

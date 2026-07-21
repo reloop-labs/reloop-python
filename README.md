@@ -1,40 +1,83 @@
 # Reloop Python SDK
 
-## Before you send
+Official Python SDK for the [Reloop](https://reloop.sh) email API. Package name on PyPI: **`reloop-email`**.
 
-You need two things:
+**Version 2.0** is a breaking rewrite aligned with the [Node.js SDK](https://github.com/reloop-labs/reloop-node): typed params, named Result objects for HTTP errors, and `ReloopValidationError` for bad client input.
 
-1. **API key** — create one in your Reloop account
-2. **Verified domain** — add and verify a sending domain; use it in the `from` address
-
-For setup details and the full API reference, see [reloop.sh/docs](https://reloop.sh/docs).
-
-## Send email
+## Install
 
 ```bash
 pip install reloop-email
 ```
 
+Requires Python 3.9+.
+
+## Quick start
+
 ```python
 from reloop_email import Reloop
 
-reloop = Reloop(api_key="rl_your_api_key_here")
+with Reloop(api_key="rl_...") as reloop:
+    result = reloop.mail.send({
+        "from": "hello@send.example.com",
+        "to": "user@example.com",
+        "subject": "Welcome",
+        "html": "<p>Thanks for signing up.</p>",
+    })
 
-result = reloop.mail.send(
-    from_="Reloop <hello@your-verified-domain.com>",
-    to="user@example.com",
-    subject="Welcome to Reloop",
-    html="<p>Thanks for signing up.</p>",
-    text="Thanks for signing up.",
-)
-
-print(result.message_id, result.id)
+    if result.email_error:
+        print(result.email_error.status, result.email_error.body.message)
+    else:
+        print(result.response["messageId"])
 ```
 
-Use `from_` instead of `from` (`from` is reserved in Python).
+## Error model
 
-More examples and optional fields: [reloop.sh/docs](https://reloop.sh/docs)
+| Kind | Behavior |
+|------|----------|
+| Invalid arguments | Raises `ReloopValidationError` (no HTTP call) |
+| API / network failure | Returns a named Result (`email_error`, `api_key_error`, `domain_error`, …) — does not raise |
+
+## Resources
+
+```text
+Reloop
+├── api_key      # create, list, get, update, delete, rotate, enable, disable
+├── mail         # send
+├── contacts     # CRUD + .properties / .groups / .channels
+├── domain       # create, list, get, update, delete, verify
+├── webhook      # CRUD, pause/enable/disable, trigger, deliveries, verify
+└── inbox
+    ├── mailboxes
+    ├── messages
+    └── threads
+```
+
+Webhook signature verification (local, no HTTP):
+
+```python
+from reloop_email import verify_webhook, WEBHOOK_SIGNATURE_HEADER
+
+event = verify_webhook({
+    "payload": raw_body,
+    "headers": {WEBHOOK_SIGNATURE_HEADER: signature_header},
+    "secret": "whsec_...",
+})
+```
+
+## Docs
+
+- API reference: [reloop.sh/docs](https://reloop.sh/docs)
+- Contributing / local development: [CONTRIBUTING.md](./CONTRIBUTING.md)
+
+## Breaking changes from 1.x
+
+- HTTP failures no longer raise `ReloopApiError` from service methods; they return named `*_error` fields.
+- Dynamic Stripe-style `Resource` objects are gone; responses are typed dicts / dataclasses.
+- `api_keys` → `api_key`; contacts nesting matches Node (`contacts.properties`, etc.).
+- Removed: `domain.get_nameservers`, `domain.forward_dns`, `api_keys.pause`.
+- `ReloopClient` is no longer a public constructable export.
 
 ## License
 
-Licensed under the [Apache License 2.0](./LICENSE) with additional use restrictions from Reloop Labs (same as the [Reloop project](https://github.com/reloop-labs/reloop/blob/main/LICENSE)).
+Apache License 2.0 with additional use restrictions from Reloop Labs. See [LICENSE](./LICENSE).

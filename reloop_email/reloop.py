@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ._http_client import HTTPClient
-from .services.api_keys import ApiKeysService
-from .services.contacts import ContactsService
-from .services.domain import DomainService
-from .services.mail import MailService
+from reloop_email.client import ReloopClient
+from reloop_email.services.api_key.api_key import ApiKeyService
+from reloop_email.services.contacts.contacts import ContactsService
+from reloop_email.services.domain.domain import DomainService
+from reloop_email.services.inbox.inbox import InboxService
+from reloop_email.services.mail.mail import MailService
+from reloop_email.services.webhook.webhook import WebhookService
+
+DEFAULT_BASE_URL = "https://reloop.sh"
 
 
 class Reloop:
@@ -14,29 +18,29 @@ class Reloop:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: Optional[str] = None,
         *,
-        base_url: str = "https://reloop.sh",
+        base_url: str = DEFAULT_BASE_URL,
+        **kwargs: object,
     ) -> None:
-        self._http = HTTPClient(api_key, base_url)
-        self.api_keys = ApiKeysService(self._http)
-        self.contacts = ContactsService(self._http)
-        self.domain = DomainService(self._http)
-        self.mail = MailService(self._http)
+        # Reject legacy aliases (Node: key/url are not accepted).
+        if "key" in kwargs or "url" in kwargs:
+            raise ValueError("Reloop SDK requires an api_key.")
+        if api_key is None:
+            raise ValueError("Reloop SDK requires an api_key.")
 
-    @classmethod
-    def client(
-        cls,
-        api_key: str,
-        base_url: str = "https://reloop.sh",
-    ) -> "Reloop":
-        """Create a new Reloop client with the given API key."""
-        return cls(api_key, base_url=base_url)
+        self._client = ReloopClient(api_key, base_url=base_url)
+        self.api_key = ApiKeyService(self._client)
+        self.contacts = ContactsService(self._client)
+        self.domain = DomainService(self._client)
+        self.webhook = WebhookService(self._client)
+        self.mail = MailService(self._client)
+        self.inbox = InboxService(self._client)
 
     def close(self) -> None:
-        self._http.close()
+        self._client.close()
 
-    def __enter__(self) -> "Reloop":
+    def __enter__(self) -> Reloop:
         return self
 
     def __exit__(self, *args: object) -> None:
