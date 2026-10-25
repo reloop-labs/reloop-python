@@ -5,12 +5,18 @@ import hmac
 import json
 import math
 import time
-from typing import Any, Mapping, Optional, Union
+from datetime import datetime, timezone
+from typing import Any, Mapping, Optional
 
 from reloop_email.services.webhook.types import WebhookSignatureVerificationError
 
-WEBHOOK_SIGNATURE_HEADER = "x-webhook-signature"
-WEBHOOK_TIMESTAMP_HEADER = "x-webhook-timestamp"
+# Reloop signs every delivery with `Reloop-Signature: t=<unix>,v1=<hex>`.
+WEBHOOK_SIGNATURE_HEADER = "Reloop-Signature"
+WEBHOOK_TIMESTAMP_HEADER = "Reloop-Timestamp"
+WEBHOOK_ID_HEADER = "Reloop-Id"
+
+# Header name used before 2.0.1. Still accepted as a fallback.
+_LEGACY_SIGNATURE_HEADER = "x-webhook-signature"
 
 
 def _header(headers: Mapping[str, Any], name: str) -> Optional[Any]:
@@ -45,7 +51,9 @@ def verify_webhook(params: Mapping[str, Any]) -> dict[str, Any]:
             f"Missing {WEBHOOK_SIGNATURE_HEADER} header"
         )
 
-    signature = _header(headers, WEBHOOK_SIGNATURE_HEADER)
+    signature = _header(headers, WEBHOOK_SIGNATURE_HEADER) or _header(
+        headers, _LEGACY_SIGNATURE_HEADER
+    )
     if not signature:
         raise WebhookSignatureVerificationError(
             f"Missing {WEBHOOK_SIGNATURE_HEADER} header"
@@ -64,34 +72,35 @@ def verify_webhook(params: Mapping[str, Any]) -> dict[str, Any]:
 
     if not timestamp or not sigs:
         raise WebhookSignatureVerificationError(
-            "Invalid X-Webhook-Signature header: expected t= and v1= values"
+            f"Invalid {WEBHOOK_SIGNATURE_HEADER} header: expected t= and v1= values"
         )
 
     try:
         ts = float(timestamp)
     except (TypeError, ValueError) as exc:
         raise WebhookSignatureVerificationError(
-            "Invalid timestamp in X-Webhook-Signature header"
+            f"Invalid timestamp in {WEBHOOK_SIGNATURE_HEADER} header"
         ) from exc
     if not math.isfinite(ts):
         raise WebhookSignatureVerificationError(
-            "Invalid timestamp in X-Webhook-Signature header"
+            f"Invalid timestamp in {WEBHOOK_SIGNATURE_HEADER} header"
         )
     if abs(math.floor(time.time()) - ts) > tolerance:
         raise WebhookSignatureVerificationError(
             f"Timestamp outside tolerance: allowed drift is {tolerance} seconds"
         )
 
-    if isinstance(payload, bytes):
-        raw = payload.decode("utf-8", errors="replace")
+    # Sign the exact bytes received; decoding first would corrupt non-UTF-8 bodies.
+    if isinstance(payload, (bytes, bytearray)):
+        raw_bytes = bytes(payload)
     elif isinstance(payload, str):
-        raw = payload
+        raw_bytes = payload.encode("utf-8")
     else:
         raise WebhookSignatureVerificationError("Webhook payload is not valid JSON")
 
     expected = hmac.new(
         str(secret).encode(),
-        f"{timestamp}.{raw}".encode(),
+        f"{timestamp}.".encode() + raw_bytes,
         hashlib.sha256,
     ).hexdigest()
 
@@ -99,7 +108,7 @@ def verify_webhook(params: Mapping[str, Any]) -> dict[str, Any]:
         raise WebhookSignatureVerificationError("Webhook signature verification failed")
 
     try:
-        event = json.loads(raw)
+        event = json.loads(raw_bytes)
     except Exception as exc:
         raise WebhookSignatureVerificationError(
             "Webhook payload is not valid JSON"
@@ -107,20 +116,60 @@ def verify_webhook(params: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(event, dict):
         raise WebhookSignatureVerificationError("Webhook payload must be a JSON object")
 
-    if not isinstance(event.get("id"), str) or not event["id"]:
+    return _normalize_event(event)
+
+
+def _normalize_event(event: dict[str, Any]) -> dict[str, Any]:
+    """Accept the production envelope {id, type, created_at, data} and the
+    legacy {id, event, payload, timestamp} shape; return both key sets."""
+    event_id = event.get("id")
+    if not isinstance(event_id, str) or not event_id:
         raise WebhookSignatureVerificationError(
             "Webhook payload missing required field: id"
         )
-    if not isinstance(event.get("event"), str) or not event["event"]:
+
+    event_type = event.get("type", event.get("event"))
+    if not isinstance(event_type, str) or not event_type:
         raise WebhookSignatureVerificationError(
-            "Webhook payload missing required field: event"
+            "Webhook payload missing required field: type"
         )
-    if not isinstance(event.get("timestamp"), (int, float)):
+
+    data = event.get("data", event.get("payload"))
+    if not isinstance(data, dict):
         raise WebhookSignatureVerificationError(
-            "Webhook payload missing required field: timestamp"
+            "Webhook payload missing required field: data"
         )
-    if not isinstance(event.get("payload"), dict):
+
+    created_at = event.get("created_at")
+    legacy_ts = event.get("timestamp")
+    if isinstance(created_at, str) and created_at:
+        try:
+            timestamp = datetime.fromisoformat(
+                created_at.replace("Z", "+00:00")
+            ).timestamp()
+        except ValueError as exc:
+            raise WebhookSignatureVerificationError(
+                "Webhook payload has an invalid created_at"
+            ) from exc
+    elif isinstance(legacy_ts, (int, float)) and not isinstance(legacy_ts, bool):
+        timestamp = float(legacy_ts)
+        created_at = (
+            datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            .isoformat(timespec="milliseconds")
+            .replace("+00:00", "Z")
+        )
+    else:
         raise WebhookSignatureVerificationError(
-            "Webhook payload missing required field: payload"
+            "Webhook payload missing required field: created_at"
         )
-    return event
+
+    return {
+        "id": event_id,
+        "type": event_type,
+        "created_at": created_at,
+        "data": data,
+        # Deprecated aliases kept for callers of the pre-2.0.1 shape.
+        "event": event_type,
+        "payload": data,
+        "timestamp": timestamp,
+    }

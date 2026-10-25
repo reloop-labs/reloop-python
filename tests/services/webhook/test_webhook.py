@@ -36,3 +36,73 @@ def test_verify_webhook_and_invalid_signature():
 def test_create_webhook_validation():
     with ReloopClient("key",base_url="https://example.test") as client:
         with pytest.raises(ReloopValidationError): WebhookService(client).create(None)
+
+
+def _sign(secret: bytes, timestamp: str, body: bytes) -> str:
+    digest = hmac.new(secret, f"{timestamp}.".encode() + body, hashlib.sha256).hexdigest()
+    return f"t={timestamp},v1={digest}"
+
+
+PRODUCTION_BODY = json.dumps(
+    {
+        "id": "whev_01abc",
+        "type": "email.received",
+        "created_at": "2026-10-26T12:00:00.000Z",
+        "data": {"email_id": "in_1", "subject": "Hello"},
+    }
+)
+
+
+def test_verify_webhook_production_delivery():
+    from reloop_email import WEBHOOK_SIGNATURE_HEADER
+
+    timestamp = str(int(time.time()))
+    event = verify_webhook(
+        {
+            "payload": PRODUCTION_BODY.encode(),
+            "headers": {
+                "reloop-signature": _sign(b"secret", timestamp, PRODUCTION_BODY.encode()),
+                "reloop-timestamp": timestamp,
+                "reloop-id": "whev_01abc",
+            },
+            "secret": "secret",
+        }
+    )
+    assert WEBHOOK_SIGNATURE_HEADER == "Reloop-Signature"
+    assert event["id"] == "whev_01abc"
+    assert event["type"] == "email.received"
+    assert event["created_at"] == "2026-10-26T12:00:00.000Z"
+    assert event["data"] == {"email_id": "in_1", "subject": "Hello"}
+    assert event["event"] == event["type"] and event["payload"] == event["data"]
+
+
+def test_verify_webhook_rejects_tampered_production_body():
+    timestamp = str(int(time.time()))
+    header = _sign(b"secret", timestamp, PRODUCTION_BODY.encode())
+    with pytest.raises(WebhookSignatureVerificationError):
+        verify_webhook(
+            {
+                "payload": PRODUCTION_BODY.replace("Hello", "Hacked"),
+                "headers": {"Reloop-Signature": header},
+                "secret": "secret",
+            }
+        )
+
+
+def test_verify_webhook_signs_raw_bytes():
+    body = json.dumps({"id": "whev_2", "type": "email.received", "created_at": "2026-10-26T12:00:00Z", "data": {"subject": "Grüße"}}, ensure_ascii=False).encode("utf-8")
+    timestamp = str(int(time.time()))
+    event = verify_webhook({"payload": body, "headers": {"Reloop-Signature": _sign(b"secret", timestamp, body)}, "secret": "secret"})
+    assert event["data"]["subject"] == "Grüße"
+
+
+def test_verify_webhook_missing_header_names_reloop_signature():
+    with pytest.raises(WebhookSignatureVerificationError, match="Reloop-Signature"):
+        verify_webhook({"payload": PRODUCTION_BODY, "headers": {}, "secret": "secret"})
+
+
+def test_construct_event_uses_reloop_signature():
+    timestamp = str(int(time.time()))
+    header = _sign(b"secret", timestamp, PRODUCTION_BODY.encode())
+    event = WebhookService.construct_event(PRODUCTION_BODY, header, "secret")
+    assert event["type"] == "email.received"

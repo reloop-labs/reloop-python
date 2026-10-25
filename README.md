@@ -58,12 +58,19 @@ Webhook signature verification (local, no HTTP):
 ```python
 from reloop_email import verify_webhook, WEBHOOK_SIGNATURE_HEADER
 
+# raw_body: the exact request bytes; signature_header: the Reloop-Signature header
 event = verify_webhook({
     "payload": raw_body,
     "headers": {WEBHOOK_SIGNATURE_HEADER: signature_header},
     "secret": "whsec_...",
 })
+
+# event: {"id", "type", "created_at", "data"}
+if event["type"] == "email.received":
+    print(event["data"]["subject"])
 ```
+
+API errors carry the fields the API returns: `email_error.body.message`, `.why`, `.fix` and `.link`.
 
 ## Docs
 

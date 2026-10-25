@@ -6,5 +6,13 @@ class CreateWebhookParams(TypedDict): description:str; url:str; events:List[str]
 class UpdateWebhookParams(TypedDict): description:NotRequired[str]; name:NotRequired[str]; url:NotRequired[str]; secret:NotRequired[str]; status:NotRequired[str]; customHeaders:NotRequired[Dict[str,str]]; rateLimitEnabled:NotRequired[bool]; maxRequestsPerMinute:NotRequired[float]; maxRetries:NotRequired[float]; retryBackoffMultiplier:NotRequired[float]; filteringOptions:NotRequired[Dict[str,Any]]
 class ListWebhooksParams(TypedDict): page:NotRequired[int]; limit:NotRequired[int]; status:NotRequired[str]; organizationId:NotRequired[str]; userId:NotRequired[str]
 class VerifyWebhookParams(TypedDict): payload:Union[str,bytes]; headers:Dict[str,Optional[str]]; secret:str; tolerance:NotRequired[int]
-class WebhookEvent(TypedDict): id:str; event:str; payload:Dict[str,Any]; timestamp:float
+class WebhookEvent(TypedDict):
+    """A verified delivery: {id, type, created_at, data}. event/payload/timestamp are deprecated aliases."""
+    id: str
+    type: str
+    created_at: str
+    data: Dict[str, Any]
+    event: str
+    payload: Dict[str, Any]
+    timestamp: float
 class WebhookSignatureVerificationError(Exception): pass

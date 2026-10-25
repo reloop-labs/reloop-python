@@ -28,6 +28,7 @@ from reloop_email.services.webhook.result import (
     WebhookResult,
 )
 from reloop_email.services.webhook.verify.verify import (
+    WEBHOOK_ID_HEADER,
     WEBHOOK_SIGNATURE_HEADER,
     WEBHOOK_TIMESTAMP_HEADER,
     verify_webhook,
@@ -65,6 +66,7 @@ __all__ = [
     "WebhookListResult",
     "WebhookResult",
     "verify_webhook",
+    "WEBHOOK_ID_HEADER",
     "WEBHOOK_SIGNATURE_HEADER",
     "WEBHOOK_TIMESTAMP_HEADER",
     "MailboxListResult",

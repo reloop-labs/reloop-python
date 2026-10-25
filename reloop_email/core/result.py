@@ -10,20 +10,25 @@ T = TypeVar("T")
 class ReloopApiErrorBody:
     message: Optional[str] = None
     why: Optional[str] = None
-    tip: Optional[str] = None
+    fix: Optional[str] = None
     link: Optional[str] = None
+    # Deprecated: the API returns `fix`. Kept as an alias of `fix`.
+    tip: Optional[str] = None
     extra: Optional[dict[str, Any]] = None
 
     @classmethod
     def from_mapping(cls, data: Any) -> ReloopApiErrorBody:
         if not isinstance(data, dict):
             return cls()
-        known = {"message", "why", "tip", "link"}
+        known = {"message", "why", "fix", "tip", "link"}
         extra = {k: v for k, v in data.items() if k not in known}
+        raw_fix = data.get("fix", data.get("tip"))
+        fix = raw_fix if isinstance(raw_fix, str) else None
         return cls(
             message=data.get("message") if isinstance(data.get("message"), str) else None,
             why=data.get("why") if isinstance(data.get("why"), str) else None,
-            tip=data.get("tip") if isinstance(data.get("tip"), str) else None,
+            fix=fix,
+            tip=fix,
             link=data.get("link") if isinstance(data.get("link"), str) else None,
             extra=extra or None,
         )
